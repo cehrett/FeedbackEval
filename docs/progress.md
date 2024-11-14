@@ -9,18 +9,18 @@ This checklist guides the development of the Faculty Feedback Analysis project, 
 - [x] Set up project directory structure
 - [x] Create and initialize essential files (`README.md`, `.gitignore`, `requirements.txt`)
 - [ ] Set up virtual environment and install dependencies
-- [ ] Initialize Git repository and make the first commit
-- [ ] Verify that all placeholder files and directories are in place with initial comments
+- [x] Initialize Git repository and make the first commit
+- [x] Verify that all placeholder files and directories are in place with initial comments
 
 ---
 
 ## 2. Data Analysis Module (`data_analysis`)
 
 ### 2.1 Compute Scores (Numerical Data)
-- [ ] Implement `compute_scores.py` function to calculate average scores for each faculty member
-- [ ] Add functionality to calculate standard deviation of scores
+- [x] Implement `compute_scores.py` function to calculate average scores for each faculty member
+- [x] Add functionality to calculate standard deviation of scores
 - [ ] Test `compute_scores.py` functions using sample data in `tests/test_data_analysis.py`
-- [ ] Document function purpose and parameters in `compute_scores.py`
+- [x] Document function purpose and parameters in `compute_scores.py`
 
 ### 2.2 Text Variability Calculation
 - [ ] Implement tokenization function in `text_variability.py`
