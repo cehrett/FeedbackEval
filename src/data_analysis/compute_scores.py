@@ -5,9 +5,7 @@ import argparse
 
 def load_data(filepath: str) -> pd.DataFrame:
     """Loads data from an Excel file and prepares it for analysis."""
-    df = pd.read_excel(filepath, header=None)
-    df.columns = df.iloc[-1]
-    df = df.iloc[:-1]
+    df = pd.read_excel(filepath)
     return df
 
 def calculate_mean(data: pd.Series) -> float:
