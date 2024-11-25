@@ -41,9 +41,9 @@ This checklist guides the development of the Faculty Feedback Analysis project, 
 ## 3. LLM Analysis Module (`llm_analysis`)
 
 ### 3.1 Actionability Scoring
-- [ ] Set up LLM connection in `actionability_scoring.py` to analyze feedback text
-- [ ] Define actionability criteria and scoring logic
-- [ ] Implement scoring function to rate actionability of each feedback entry
+- [x] Set up LLM connection in `actionability_scoring.py` to analyze feedback text
+- [x] Define actionability criteria and scoring logic
+- [x] Implement scoring function to rate actionability of each feedback entry
 - [ ] Write tests in `tests/test_llm_analysis.py` for actionability scoring function (using mock responses)
 - [ ] Document function purpose and parameters in `actionability_scoring.py`
 
