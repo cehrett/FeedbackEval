@@ -2,7 +2,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch.nn.functional as F
 
-def get_actionability_score(texts):
+def get_actionability_score(texts, max_new_tokens=20):
     # Load the model and tokenizer
     model_id = "meta-llama/Llama-3.2-3B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(model_id, padding_side="left")
@@ -31,8 +31,19 @@ def get_actionability_score(texts):
 
     # Run model to get logits and generated output
     with torch.no_grad():
-        outputs = model.generate(**model_inputs, max_new_tokens=100, return_dict_in_generate=True, output_scores=True)
-        generated_texts = tokenizer.batch_decode(outputs.sequences, skip_special_tokens=True)
+        outputs = model.generate(**model_inputs, max_new_tokens=max_new_tokens, return_dict_in_generate=True, output_scores=True)
+        generated_token_ids = outputs.sequences
+
+    # Extract only the newly generated text for each response
+    new_generated_texts = []
+    for i, text in enumerate(texts):
+        input_ids = model_inputs['input_ids'][i]
+        generated_ids = generated_token_ids[i]
+
+        # The new response starts after the input
+        new_token_ids = generated_ids[len(input_ids):]
+        new_response = tokenizer.decode(new_token_ids, skip_special_tokens=True).strip()
+        new_generated_texts.append(new_response)
 
     logits = outputs.scores[0]
 
@@ -50,7 +61,7 @@ def get_actionability_score(texts):
     # Calculate average actionability score
     average_score = sum(actionable_probs) / len(actionable_probs)
 
-    return average_score, actionable_probs, generated_texts
+    return average_score, actionable_probs, new_generated_texts
 
 if __name__ == "__main__":
     # Example usage
@@ -62,7 +73,10 @@ if __name__ == "__main__":
         "You're doing wonderfully.",
         "There's probably some surgical stuff you can work on."
     ]
+
+    # Get actionability score for each text
     avg_score, scores, outputs = get_actionability_score(texts)
+    print("Actionability Scores:")
     for text, score, output in zip(texts, scores, outputs):
-        print(f"Text: {text}\nActionability score: {score:.5f}\nModel Output: {output.split('\n')[-1]}\n")
-    print(f"Average Actionability Score: {avg_score:.2f}")
+        print(f"Text: {text}\nActionability score: {score:.5f}\nModel Output: {output.split('\n')[-1]}\n\n")
+    print(f"Average Actionability Score: {avg_score:.2f}\n\n")
