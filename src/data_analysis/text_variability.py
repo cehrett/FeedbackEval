@@ -32,11 +32,22 @@ def load_data(file_path, text_column):
         raise ValueError(f"Error loading data: {e}")
 
 def preprocess_text(text_data):
-    """Minimal preprocessing for text data."""
+    """
+    Perform minimal preprocessing on a list of text data.
+
+    This function strips leading and trailing whitespace from each string in the input list
+    and removes any empty strings from the list.
+
+    Args:
+        text_data (list of str): A list of text strings to be preprocessed.
+
+    Returns:
+        list of str: A list of preprocessed text strings with whitespace removed and empty strings filtered out.
+    """
     # Strip whitespace and remove empty strings.
     return [stripped for text in text_data if (stripped := text.strip())]
 
-def generate_embeddings(text_data, model_name):
+def generate_embeddings(text_data, model_name="all-MiniLM-L6-v2"):
     """Generate embeddings for text data using a SentenceTransformer model."""
     try:
         model = SentenceTransformer(model_name)

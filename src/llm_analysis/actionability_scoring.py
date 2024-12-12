@@ -2,13 +2,26 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch.nn.functional as F
 
-def get_actionability_score(texts, max_new_tokens=20):
+def get_actionability_score(texts, max_new_tokens=20, batch_size=4):
+    """
+    Get the actionability score for a batch of texts using a pre-trained language model.
+
+    Args:
+        texts (list of str): A list of input texts to score for actionability.
+        max_new_tokens (int): The maximum number of tokens to generate for each text.
+        batch_size (int): The number of texts to process in each batch.
+
+    Returns:
+        float: The average actionability score for the batch of texts.
+        list of float: The actionability score for each text.
+        list of str: The generated responses for each text.
+    """
     # Load the model and tokenizer
     model_id = "meta-llama/Llama-3.2-3B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(model_id, padding_side="left")
     model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
 
-    # Define the conversation using a list of messages (chat template)
+    # Define the conversation template
     base_messages = [
         {"role": "system", "content": "You are a helpful assistant that classifies statements as actionable or not actionable. \"Actionable\" statements are statements that imply a specific task, action, or strategy for improvement. Vague or general instructions that do not imply a specific task, action or strategy for improvement are not actionable. The user will submit statements; you respond to each with either \"Actionable\" or \"Not Actionable\", followed by a clear summary of the implied specific task, action, or strategy for improvement, if the statement is actionable. If not, then provide a reason why the statement is not actionable."},
         {"role": "user", "content": "You need to spend more time practicing your surgical technique."},
@@ -19,44 +32,63 @@ def get_actionability_score(texts, max_new_tokens=20):
         {"role": "assistant", "content": "Actionable. Action: Reread textbook to fill gaps in knowledge."}
     ]
 
-    # Prepare inputs for each text in the batch
-    batch_messages = []
-    for text in texts:
-        messages = base_messages + [{"role": "user", "content": text}]
-        batch_messages.append(messages)
-
-    # Tokenize the messages using chat template
-    tokenizer.pad_token = tokenizer.eos_token  # Set pad token to eos
-    model_inputs = tokenizer.apply_chat_template(batch_messages, add_generation_prompt=True, return_tensors="pt", padding=True, return_dict=True).to("cuda")
-
-    # Run model to get logits and generated output
-    with torch.no_grad():
-        outputs = model.generate(**model_inputs, max_new_tokens=max_new_tokens, return_dict_in_generate=True, output_scores=True)
-        generated_token_ids = outputs.sequences
-
-    # Extract only the newly generated text for each response
+    # Initialize accumulators
+    actionable_probs = []
     new_generated_texts = []
-    for i, text in enumerate(texts):
-        input_ids = model_inputs['input_ids'][i]
-        generated_ids = generated_token_ids[i]
 
-        # The new response starts after the input
-        new_token_ids = generated_ids[len(input_ids):]
-        new_response = tokenizer.decode(new_token_ids, skip_special_tokens=True).strip()
-        new_generated_texts.append(new_response)
+    # Process in batches
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i:i + batch_size]
 
-    logits = outputs.scores[0]
+        # Prepare inputs for each text in the batch
+        batch_messages = []
+        for text in batch_texts:
+            messages = base_messages + [{"role": "user", "content": text}]
+            batch_messages.append(messages)
 
-    # Tokenize the labels "actionable" and "not actionable" to compare logits
-    labels = ["Actionable.", "Not Actionable."]
-    label_ids = [tokenizer.encode(label, add_special_tokens=False)[0] for label in labels]
+        # Tokenize the messages using chat template
+        tokenizer.pad_token = tokenizer.eos_token
+        model_inputs = tokenizer.apply_chat_template(
+            batch_messages,
+            add_generation_prompt=True,
+            return_tensors="pt",
+            padding=True,
+            return_dict=True
+        ).to("cuda")
 
-    # Extract logits for the target labels and apply softmax to get probabilities
-    label_logits = logits[:, label_ids]
-    probabilities = F.softmax(label_logits, dim=-1)
+        # Run model to get logits and generated output
+        with torch.no_grad():
+            outputs = model.generate(
+                **model_inputs,
+                max_new_tokens=max_new_tokens,
+                pad_token_id=tokenizer.pad_token_id,
+                return_dict_in_generate=True,
+                output_scores=True
+            )
+            generated_token_ids = outputs.sequences
 
-    # Get the probability for "actionable" for each text in the batch
-    actionable_probs = probabilities[:, 0].tolist()
+        # Extract generated text
+        for j, text in enumerate(batch_texts):
+            input_ids = model_inputs['input_ids'][j]
+            generated_ids = generated_token_ids[j]
+
+            # The new response starts after the input
+            new_token_ids = generated_ids[len(input_ids):]
+            new_response = tokenizer.decode(new_token_ids, skip_special_tokens=True).strip()
+            new_generated_texts.append(new_response)
+
+        logits = outputs.scores[0]
+
+        # Tokenize the labels "actionable" and "not actionable" to compare logits
+        labels = ["Actionable.", "Not Actionable."]
+        label_ids = [tokenizer.encode(label, add_special_tokens=False)[0] for label in labels]
+
+        # Extract logits for the target labels and apply softmax to get probabilities
+        label_logits = logits[:, label_ids]
+        probabilities = F.softmax(label_logits, dim=-1)
+
+        # Get the probability for "actionable" for each text in the batch
+        actionable_probs.extend(probabilities[:, 0].tolist())
 
     # Calculate average actionability score
     average_score = sum(actionable_probs) / len(actionable_probs)

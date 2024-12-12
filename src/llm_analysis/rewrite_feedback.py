@@ -5,6 +5,17 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch.nn.functional as F
 
 def rewrite_feedback(texts, max_new_tokens=250):
+    """
+    Rewrite non-actionable feedback using a pre-trained language model.
+
+    Args:
+        texts (list of str): A list of non-actionable feedback texts to rewrite.
+        max_new_tokens (int): The maximum number of tokens to generate for each text.
+
+    Returns:
+        list of str: The rewritten feedback for each input text.
+    """
+
     # Load the model and tokenizer
     model_id = "meta-llama/Llama-3.2-3B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(model_id, padding_side="left")
