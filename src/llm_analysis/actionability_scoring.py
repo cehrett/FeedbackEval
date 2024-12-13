@@ -2,7 +2,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch.nn.functional as F
 
-def get_actionability_score(texts, max_new_tokens=20, batch_size=4):
+def get_actionability_score(texts, max_new_tokens=5, batch_size=4):
     """
     Get the actionability score for a batch of texts using a pre-trained language model.
 

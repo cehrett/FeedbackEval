@@ -23,19 +23,19 @@ def rewrite_feedback(texts, max_new_tokens=250):
 
     # Define the conversation using a list of messages (chat template)
     base_messages = [
-        {"role": "system", "content": "You are a helpful assistant that rewrites feedback from mentors to medical students, to make it more actionable. \"Actionable\" statements are statements that imply a specific task, action, or strategy for improvement. Vague or general instructions that do not imply a specific task, action or strategy for improvement are not actionable. The user will submit a piece of feedback which is not actionable; you respond with an example of similar feedback which is more actionable."},
+        {"role": "system", "content": "You are a helpful assistant that rewrites feedback from mentors to medical students, to make it more actionable for the student. \"Actionable\" statements are statements that imply a specific task, action, or strategy for improvement. Vague or general instructions that do not imply a specific task, action or strategy for improvement are not actionable. The user will submit a piece of feedback which is not actionable; you respond with an example of similar feedback which is actionable."},
         {"role": "user", "content": "Your notes were hard to follow."},
-        {"role": "assistant", "content": "Structure your notes by separating subjective and objective findings clearly, and keep them concise."},
+        {"role": "assistant", "content": "Your notes were hard to follow. Structure your notes by separating subjective and objective findings clearly, and keep them concise."},
         {"role": "user", "content": "Your diagnosis wasn’t the best."},
         {"role": "assistant", "content": "To improve diagnostic accuracy, focus on reviewing differential diagnoses for common symptoms."},
-        {"role": "user", "content": "You need to take initiative."},
-        {"role": "assistant", "content": "Take initiative by volunteering for at least one procedure or patient handoff per shift."},
+        {"role": "user", "content": "Dr. Renheren needs to take initiative."},
+        {"role": "assistant", "content": "Dr. Renheren needs to take initiative by volunteering for at least one procedure or patient handoff per shift."},
         {"role": "user", "content": "You should be more confident."},
         {"role": "assistant", "content": "During patient discussions, present your diagnosis first and explain your reasoning confidently."},
-        {"role": "user", "content": "You need to work on your communication skills."},
-        {"role": "assistant", "content": "To improve communication, start by summarizing the patient’s concerns clearly during handovers."},
-        {"role": "user", "content": "The patients seem to like you."},
-        {"role": "assistant", "content": "Patients appreciate your empathy; consider maintaining eye contact and using their name during interactions."},
+        {"role": "user", "content": "Dr. Quelcanne needs to work on her communication skills."},
+        {"role": "assistant", "content": "To improve communication, Dr. Quelcanne should start by summarizing the patient’s concerns clearly during handovers."},
+        {"role": "user", "content": "The patients seem to like Dr. Algun."},
+        {"role": "assistant", "content": "Patients appreciate Dr. Algun's empathy; he could strengthen these interactions further by maintaining eye contact and using the patients' name during interactions."},
     ]
 
     # Prepare inputs for each text in the batch
