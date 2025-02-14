@@ -3,13 +3,16 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch.nn.functional as F
+from .feedback_prompts import ACTIONABILITY_SYSTEM_PROMPT, SPECIFICITY_SYSTEM_PROMPT
+from utils.llm_utils import get_feedback_fsl_examples
 
-def rewrite_feedback(texts, max_new_tokens=250):
+def rewrite_feedback(texts, system_prompt, max_new_tokens=250):
     """
-    Rewrite non-actionable feedback using a pre-trained language model.
+    Rewrite feedback using a pre-trained language model.
 
     Args:
-        texts (list of str): A list of non-actionable feedback texts to rewrite.
+        texts (list of str): A list of feedback texts to rewrite.
+        system_prompt (str): The system prompt to use for rewriting the feedback.
         max_new_tokens (int): The maximum number of tokens to generate for each text.
 
     Returns:
@@ -17,26 +20,12 @@ def rewrite_feedback(texts, max_new_tokens=250):
     """
 
     # Load the model and tokenizer
-    model_id = "meta-llama/Llama-3.2-3B-Instruct"
+    model_id = "Qwen/Qwen2.5-32B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(model_id, padding_side="left")
-    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto", torch_dtype=torch.bfloat16)
 
-    # Define the conversation using a list of messages (chat template)
-    base_messages = [
-        {"role": "system", "content": "You are a helpful assistant that rewrites feedback from mentors to medical students, to make it more actionable for the student. \"Actionable\" statements are statements that imply a specific task, action, or strategy for improvement. Vague or general instructions that do not imply a specific task, action or strategy for improvement are not actionable. The user will submit a piece of feedback which is not actionable; you respond with an example of similar feedback which is actionable."},
-        {"role": "user", "content": "Your notes were hard to follow."},
-        {"role": "assistant", "content": "Your notes were hard to follow. Structure your notes by separating subjective and objective findings clearly, and keep them concise."},
-        {"role": "user", "content": "Your diagnosis wasn’t the best."},
-        {"role": "assistant", "content": "To improve diagnostic accuracy, focus on reviewing differential diagnoses for common symptoms."},
-        {"role": "user", "content": "Dr. Renheren needs to take initiative."},
-        {"role": "assistant", "content": "Dr. Renheren needs to take initiative by volunteering for at least one procedure or patient handoff per shift."},
-        {"role": "user", "content": "You should be more confident."},
-        {"role": "assistant", "content": "During patient discussions, present your diagnosis first and explain your reasoning confidently."},
-        {"role": "user", "content": "Dr. Quelcanne needs to work on her communication skills."},
-        {"role": "assistant", "content": "To improve communication, Dr. Quelcanne should start by summarizing the patient’s concerns clearly during handovers."},
-        {"role": "user", "content": "The patients seem to like Dr. Algun."},
-        {"role": "assistant", "content": "Patients appreciate Dr. Algun's empathy; he could strengthen these interactions further by maintaining eye contact and using the patients' name during interactions."},
-    ]
+    # Define the base messages with system prompt and few-shot examples
+    base_messages = [{"role": "system", "content": system_prompt}] + get_feedback_fsl_examples()
 
     # Prepare inputs for each text in the batch
     batch_messages = []
@@ -78,8 +67,8 @@ if __name__ == "__main__":
     ]
 
     # Get rewritten feedback for each text
-    rewritten_feedback = rewrite_feedback(texts)
-    print("Rewritten Feedback:")
+    rewritten_feedback = rewrite_feedback(texts, ACTIONABILITY_SYSTEM_PROMPT)
+    print("Rewritten feedback (for actionability):")
     for text, output in zip(texts, rewritten_feedback):
         print(f"Original Feedback: {text}\nRewritten Feedback: {output}\n\n")
 

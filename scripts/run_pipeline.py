@@ -2,8 +2,8 @@
 
 import sys
 import os
-import pandas as pd
 
+print("Running pipeline...")
 from data_analysis.compute_scores import load_data as load_numerical_data, compute_statistics
 from data_analysis.text_variability import (
     load_data as load_text_data,
@@ -17,7 +17,7 @@ from utils.anonymization_utils import anonymize_batch
 from report_generation.generate_reports import generate_report
 
 
-def main(excel_file_path, output_html_path="report.html"):
+def main(excel_file_path, output_html_path="report.html", num_rewrites=5):
     """
     Main pipeline for faculty feedback analysis.
 
@@ -48,7 +48,7 @@ def main(excel_file_path, output_html_path="report.html"):
 
     # Identify least actionable text and rewrite
     print("Finding least actionable text...")
-    actionable_indices = sorted(range(len(actionability_scores)), key=lambda i: actionability_scores[i])[:5]
+    actionable_indices = sorted(range(len(actionability_scores)), key=lambda i: actionability_scores[i])[:num_rewrites]
     least_actionable_texts = [preprocessed_text[i] for i in actionable_indices]
     rewritten_texts = rewrite_feedback(least_actionable_texts)
 
@@ -79,11 +79,18 @@ def main(excel_file_path, output_html_path="report.html"):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python run_pipeline.py <path_to_excel_file> [output_html_path]")
-        sys.exit(1)
-
-    excel_file_path = sys.argv[1]
-    output_html_path = sys.argv[2] if len(sys.argv) > 2 else "report.html"
-    main(excel_file_path, output_html_path)
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Run faculty feedback analysis pipeline.')
+    parser.add_argument('excel_file', help='Path to the Excel file with feedback data')
+    parser.add_argument('--output', '-o', default='report.html', help='Path to save the output HTML report')
+    parser.add_argument('--num-rewrites', '-n', type=int, default=5, 
+                       help='Number of least actionable feedback examples to rewrite (default: 5)')
+    
+    args = parser.parse_args()
+    print("Running pipeline with arguments:")
+    print(f"Excel file: {args.excel_file}")
+    print(f"Output file: {args.output}")
+    print(f"Number of rewrites: {args.num_rewrites}")
+    main(args.excel_file, args.output, args.num_rewrites)
 
